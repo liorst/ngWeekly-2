@@ -1,67 +1,73 @@
-'use strict';
-
-function Klass(){
-  return this;
-}
-Klass.prototype.blue = function(){
-  this.blue = true;
-}
-angular.module('CountryExplorer', [])
-  .service('myKlass', Klass)
-  .controller('TestKlassCtrl', function(myKlass, $timeout){
-    console.info(myKlass.blue);
-  })
-  .factory('Countries', function($http, myKlass){
-    myKlass.blue();
-    console.info(myKlass.blue);
-    var endpoint = 'http://restcountries.eu/rest/v1/name/',
-      api = {
-        get: function(name){
-          var url = endpoint + name + '?fullText=true';
-          return $http.get(url).then(function(response){
-            return response.data[0];
-          });
+'use strict'
+var app = angular.module('my.directives', [])
+    .directive('injectRandomData', function() {
+        return {
+            restrict: 'E', //restrict the directive to be used as an element only
+            transclude: true,
+            scope:true,
+            template: '<div><div>{{randomText}}</div><ng-transclude></ng-transclude><div>{{randomText}}</div></div>',
+            link: function(scope, element, attrs) {
+                scope.randomText = Math.random();
+            }
+        };
+    })
+    .directive('trimSpaces', function() {
+        return {
+            restrict: 'A', //use the directive as an attribute only,
+            scope: true,
+            link: function(scope, element, attrs) {
+                function recursiveTrim(root) {
+                  var regex = new RegExp(' ', 'g');
+                    angular.forEach(root.children, function(child) {
+                        recursiveTrim(child.children);
+                    });
+                    root.text(root.text().replace(regex, '_'));
+                }
+                recursiveTrim(element);
+            }
+        };
+    })
+    .directive('tvScreen', function($timeout) {
+        return {
+            restrict: 'E',
+            scope: {
+                'text': '@',
+                'latency': '='
+            },
+            templateUrl: 'tvScreen.html',
+            link: function(scope, element, attrs) {
+                var i = 0,
+                  length = scope.text.length,
+                  latency = scope.latency || 50;
+                  scope.buffer = [];
+                (function insertToBuffer(letter) {
+                  $timeout(function() {
+                    scope.buffer.push(letter);
+                    if (i < length) {
+                      insertToBuffer(scope.text[i]);
+                    i++;
+                    }
+                  }, latency);
+                })();
+            }
+        };
+    })
+    .directive('blink', function ($interval) {
+      return {
+        restrict: 'A',
+        scope:{
+          'duration':'='
+        },
+        link: function (scope, element, attrs) {
+          var duration = scope.duration || 500;
+          $interval(function(){
+            if(element.hasClass('hidden')){
+              element.removeClass('hidden');
+            }
+            else{
+              element.addClass('hidden');
+            }
+          }, duration);
         }
       };
-    return api;
-  })
-  .controller('MainCtrl', function($scope, Countries){
-    //initialize the object with some data
-    $scope.country = {
-        name:'Jamaica',
-        region:'America',
-        famousPerson: 'Usain Bolt'
-        //Some more default data data
-      };
-    $scope.input = {
-      country: $scope.country,
-      show:'end'
-    };
-    $scope.playGame = function(){
-      delete $scope.input.guess;
-      if($scope.input.country.name.length > 2){
-        $scope.input.show = 'guess';
-        $scope.result = false;
-      }
-    };
-    function finishGame(result){
-      $scope.play = false;
-      $scope.input.show = 'end';
-      $scope.result = result;
-    }
-    $scope.restartGame = function(){
-      $scope.input.guess = null;
-      $scope.input.show = 'play';
-      $scope.play = true;
-    };
-
-    $scope.getThatData = function(){
-      Countries.get($scope.input.country.name).then(function(country){
-        //Do something with response
-        $scope.country = country;
-        finishGame(country.capital);
-      }, function(){
-        finishGame(null);
-      });
-    };
-  });
+    });
