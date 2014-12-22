@@ -1,9 +1,9 @@
-# ngWeekly-1
+# ngWeekly-2
 
 
 ```
-git clone https://github.com/liorst/ngweekly-1.git
-cd ngweekly-1
+git clone https://github.com/liorst/ngweekly-2.git
+cd ngweekly-2
 ```
 
 ### Install Dependencies
